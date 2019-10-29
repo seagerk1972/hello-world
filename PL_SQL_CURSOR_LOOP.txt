@@ -1,0 +1,207 @@
+
+---------------------------------------------------------------
+---------------------------------------------------------------
+---- CURSOR WHICH LOOPS AND OUTPUTS ALL VALUES ----------------
+---------------------------------------------------------------
+---------------------------------------------------------------
+
+DECLARE
+
+CURSOR source_type IS
+    select source_system_type from feed.source_system_types;
+    
+BEGIN
+
+ For i in source_type
+ LOOP
+ DBMS_OUTPUT.PUT_LINE( i.source_system_type  || ' source system type' );
+END LOOP;
+
+END;
+
+--------------------------------------------------------------
+--------------------------------------------------------------
+-----amended to pass output of cursor as a variable ----------
+--------------------------------------------------------------
+--------------------------------------------------------------
+
+DECLARE
+
+l_prov_prod VARCHAR2(100) := null;
+
+CURSOR source_type IS
+    select source_system_type from feed.source_system_types;
+    
+BEGIN
+
+ For l_prov_prod in source_type
+ LOOP
+
+  DBMS_OUTPUT.PUT_LINE( l_prov_prod.source_system_type || 'is a source system type' );
+END LOOP;
+
+END;
+
+--------------------------------------------------------------
+--------------------------------------------------------------
+-----select a variable and then puts it into a select --------
+--------------------------------------------------------------
+--------------------------------------------------------------
+
+DECLARE
+
+l_prov_prod VARCHAR2(100) := null;
+l_file_seq NUMBER := NULL;
+
+CURSOR source_type IS
+    select source_system_type from feed.source_system_types;
+    
+BEGIN
+
+OPEN source_type;
+
+LOOP 
+ FETCH source_type into  l_prov_prod;
+ 
+ select max(file_control_seq) into  l_file_seq
+ from feed.file_control where prov_prod_file_type_ref =  l_prov_prod; 
+
+DBMS_OUTPUT.PUT_LINE('For Source System Type '|| l_prov_prod|| ' the max file control seq is '||l_file_seq );
+  
+ EXIT WHEN source_type%NOTFOUND;
+ END LOOP;
+ Close source_type;
+
+END;
+
+
+--------------------------------------------------------------
+--------------------------------------------------------------
+-----attempting nested loops with cursor --------
+--------------------------------------------------------------
+--------------------------------------------------------------
+
+DECLARE
+
+l_prov_prod VARCHAR2(100) := null;
+l_file_seq NUMBER := NULL;
+
+CURSOR source_type IS
+    select source_system_type from feed.source_system_types;
+    
+CURSOR file_seq IS    
+ select max(file_control_seq) 
+ from feed.file_control where prov_prod_file_type_ref =  l_prov_prod; 
+   
+   
+BEGIN
+
+OPEN source_type;
+<<outer>>
+LOOP 
+ FETCH source_type into  l_prov_prod;
+
+OPEN file_seq; 
+<<inner>>
+LOOP
+ FETCH file_seq into  l_file_seq;
+ 
+
+DBMS_OUTPUT.PUT_LINE('For Source System Type '|| l_prov_prod|| ' the max file control seq is '||l_file_seq );
+  
+ EXIT WHEN source_type%NOTFOUND;
+ EXIT WHEN file_seq%NOTFOUND;
+ END LOOP inner;
+ END LOOP outer;
+ Close file_seq;
+ Close source_type;
+
+END;
+
+
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+-----------------------CURSOR FOR LOOP -----------------------------
+--------------------------------------------------------------------
+--------------------------------------------------------------------
+
+---- simple example 
+
+DECLARE
+
+CURSOR source_type IS
+    select source_system_type from feed.source_system_types
+    order by 1 desc;
+
+  
+BEGIN
+
+FOR cur_source_type_var IN  source_type LOOP
+DBMS_OUTPUT.PUT_LINE(cur_source_type_var.source_system_type);
+
+END LOOP;
+END;
+
+
+-----
+
+
+
+DECLARE
+
+l_prov_prod VARCHAR2(100) := null;
+l_file_seq NUMBER := NULL;
+
+CURSOR source_type IS
+    select source_system_type from feed.source_system_types
+    order by 1 desc;
+    
+CURSOR file_seq IS    
+ select max(file_control_seq) max_seq
+ from feed.file_control where prov_prod_file_type_ref =  l_prov_prod; 
+   
+   
+BEGIN
+
+<<outer>>
+FOR cur_source_type_var IN  source_type LOOP
+DBMS_OUTPUT.PUT_LINE(cur_source_type_var.source_system_type);
+<<inner>>
+FOR cur_file_seq_var IN file_seq LOOP
+DBMS_OUTPUT.PUT_LINE(cur_file_seq_var.max_seq);
+END LOOP inner;
+END LOOP outer;
+END;
+
+
+
+-------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
+
+
+DECLARE
+
+l_prov_prod VARCHAR2(100) := null;
+l_file_seq NUMBER := NULL;
+
+CURSOR source_type IS
+    select source_system_type from feed.source_system_types
+    order by 1 desc;
+   
+BEGIN
+
+<<outer>>
+FOR cur_source_type_var IN  source_type LOOP
+
+select max(file_control_Seq) into l_file_seq
+from feed.file_control where prov_prod_file_type_ref =  cur_source_type_var.source_system_type;
+
+DBMS_OUTPUT.PUT_LINE('For source system type: '||cur_source_type_var.source_system_type||' the max file control seq is: '||l_file_seq);
+END LOOP outer;
+END;
+
+
+-------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
